@@ -106,3 +106,107 @@ order by amount DESC;
 -- from <table>
 -- where <conditional>
 -- order by <column>;
+
+-- The use of SQL aggregations -> aka how we take many rows of data and condense them
+-- into a single easy to digest piece of information
+SELECT *
+FROM payment
+WHERE amount = 0.99;
+-- How many $0.99 payments have I received
+-- we can find the answer by looking at total rows in a normal query
+-- or we can run an aggregate as part of our query
+-- and get the actual number as a result
+
+-- instead of selecting a column, I can select an aggregate function
+-- Option for aggregates: COUNT(), SUM(), AVG(), MIN(), MAX()
+select count(amount)
+from payment
+where amount = 0.99;
+-- 2,683 payments of $0.99
+
+-- How much money did we make from 2683 payments of $0.99
+select sum(amount)
+from payment
+where amount = 0.99;
+-- $2,656.17
+
+-- What was the average payment amount?
+select avg(amount)
+from payment;
+-- $3.01
+
+-- What if I want to select other columns in addition to my aggregate result
+-- I can't without another clause
+-- use the GROUP BY clause to specify how non-aggregates should behave when used alongside an aggregate
+-- I want to know the number of payments of each amount
+select count(amount), amount
+from payment
+group by amount;
+
+-- which payment amount have we made the most money off of?
+select amount, sum(amount)
+from payment
+group by amount
+order by sum(amount) desc;
+-- we've made the most money off of $4.99 sales
+
+-- Which customer spent the most money?
+select customer_id, sum(amount)
+from payment
+group by customer_id
+order by sum(amount) desc;
+-- customer_id 6 spent the most money
+
+-- how was customer 6's spending distributed?
+-- we can do a multiple group by
+-- aka we can primarily group by customer_id and secondarily group by amount
+-- I can include a where clause with my aggregate
+select customer_id, amount, count(amount), sum(amount)
+from payment
+where customer_id = 6
+group by customer_id, amount;
+
+-- Which of my customers have spent more than $1000?
+-- To answer this question, we essentially need to apply a conditional to our aggregate
+-- HAVING clause
+-- the HAVING clause performs the conditional role for AGGREGATES
+-- just like the WHERE clause is the conditional clause for regular columns
+select customer_id, sum(amount)
+from payment
+group by customer_id
+having sum(amount) > 1000
+order by customer_id;
+-- Two customers spent more than $1000
+-- customer_id 5 and customer_id 6
+
+-- Who are customer 5 and customer 6?
+select *
+from customer
+where customer_id = 5 or customer_id = 6;
+
+-- What if I wanted to write a query to directly in one query access the names and emails of my best customers along with the amount they spent?
+-- In other words, how do I get results from two tables at once?
+-- I can combine queries in multiple tables with a join
+-- If we have two tables with a shared column
+-- such as customer_id in both the customer and payment table
+-- we can combine data from both tables by joining it on that shared column 
+-- in order to perform a join you need a JOIN clause and an ON clause
+
+-- SELECT <columns>
+-- FROM <primary table>
+-- JOIN <secondary table>
+-- ON <primary_table.column> = <secondary_table.column>;
+select payment.customer_id, first_name, last_name, sum(amount)
+from payment
+join customer
+on payment.customer_id = customer.customer_id
+group by payment.customer_id, first_name, last_name
+having sum(amount) > 1000;
+
+-- Two separate tables:
+select * from customer;
+select * from payment;
+-- they share the customer_id column
+-- If we need to answer a question about data in both tables
+-- We can join them together on that shared column 
+-- and access information from both tables in a single query
